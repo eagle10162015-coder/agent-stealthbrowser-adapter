@@ -1,0 +1,7 @@
+node_modules/
+*.csv
+*.vault
+credentials.json
+.env
+profiles/
+*.log

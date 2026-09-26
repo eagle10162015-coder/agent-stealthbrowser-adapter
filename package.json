@@ -1,0 +1,16 @@
+{
+  "name": "agent-stealthbrowser-adapter",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "agent-stealthbrowser": "./llm-browser-mcp.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cloakbrowser": "^0.5.8"
+  }
+}
