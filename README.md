@@ -5,6 +5,9 @@ human using the same browser window. It uses the shared Wraith account vault
 for imported accounts. Account lookup returns labels and IDs. `llm_autofill`
 and `llm_fill_account` place a chosen password into the live page without
 returning it in an MCP result.
+Agents with arbitrary page evaluation can inspect values already entered into
+a page. `llm_fingerprint_health` checks a few local browser signals without a
+screenshot; its result cannot guarantee acceptance by a site.
 
 ## Setup
 

@@ -296,8 +296,8 @@ async function llm_profile_create({ name, copy_from }) {
 async function llm_profile_list() {
     await _ensureProfilesDir();
     const entries = await readdir(PROFILES_DIR, { withFileTypes: true });
-    const profiles = entries.filter(e => e.isDirectory()).map(e => e.name);
-    return { engine: 'llm', profiles, active: _currentProfile, count: profiles.length };
+    const profiles = ['default', ...entries.filter(e => e.isDirectory() && e.name !== 'default').map(e => e.name)];
+    return { engine: 'llm', profiles, active: _currentProfile || DEFAULT_PROFILE, count: profiles.length };
 }
 
 async function llm_profile_load({ name }) {
@@ -581,6 +581,19 @@ async function llm_eval({ js }) {
     return { engine: 'llm', data };
 }
 
+async function llm_fingerprint_health() {
+    const page = await getPage();
+    const signals = await page.evaluate(() => {
+        const webdriver = navigator.webdriver === true;
+        const headlessUA = /Headless/i.test(navigator.userAgent);
+        const plugins = navigator.plugins.length;
+        const geometryValid = outerWidth >= innerWidth && outerHeight >= innerHeight;
+        return { webdriver, headlessUA, plugins, geometryValid,
+            basicSignalsPass: !webdriver && !headlessUA && plugins > 0 && geometryValid };
+    });
+    return { engine: 'llm', ...signals };
+}
+
 async function llm_extract_links({ filter }) {
     const page = await getPage();
     const links = await page.evaluate((f) => {
@@ -760,7 +773,7 @@ async function llm_status() {
     const info = {
         engine: 'llm',
         browser_open: !!(_browser || _context),
-        profile: _currentProfile,
+        profile: _currentProfile || DEFAULT_PROFILE,
         url: _page && !_page.isClosed?.() ? _page.url() : null,
         title: _page && !_page.isClosed?.() ? await _page.title().catch(() => null) : null,
         tabs: _context ? _context.pages().length : 0,
@@ -831,6 +844,8 @@ const TOOLS = [
     // Content extraction
     { name: 'llm_eval', description: 'Run JavaScript in the current page.',
       inputSchema: { type: 'object', properties: { js: { type: 'string' } }, required: ['js'] }, fn: llm_eval },
+    { name: 'llm_fingerprint_health', description: 'Check basic automation and window signals without screenshots. This does not predict every site verdict.',
+      inputSchema: { type: 'object', properties: {}, required: [] }, fn: llm_fingerprint_health },
     { name: 'llm_extract_links', description: 'Extract all links from the page, optionally filtered.',
       inputSchema: { type: 'object', properties: { filter: { type: 'string', description: 'Filter by URL or text' } }, required: [] }, fn: llm_extract_links },
     { name: 'llm_extract_text', description: 'Extract text content from the page or a specific element.',
