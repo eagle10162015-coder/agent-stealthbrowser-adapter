@@ -259,7 +259,7 @@ async function _vaultInput(args, value) {
     if (env.WRAITH_SRC) env.PYTHONPATH = [env.WRAITH_SRC, env.PYTHONPATH].filter(Boolean).join(separator);
     return await new Promise((resolve, reject) => {
         const child = spawn(env.WRAITH_PYTHON || 'python', ['-m', 'wraith.account_vault', ...args], {
-            env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
+            env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000,
         });
         let output = '';
         child.stdout.on('data', chunk => { output += chunk; });
@@ -324,10 +324,10 @@ async function llm_profile_delete({ name }) {
 
 // === CREDENTIAL MANAGEMENT ===
 
-async function llm_credential_save({ site, username, password, notes }) {
+async function llm_credential_save({ site, username, password, notes, account_id }) {
     const origin = _siteOrigin(site);
     const entry = JSON.parse(await _vaultInput(['_upsert_json'], JSON.stringify({
-        url: origin, username, password, name: notes || '', source: 'agent',
+        url: origin, username, password, name: notes || '', source: 'agent', account_id: account_id || '',
     })));
     return { engine: 'llm', account: entry, status: 'saved' };
 }
@@ -782,7 +782,7 @@ const TOOLS = [
 
     // Credential management
     { name: 'llm_credential_save', description: 'Save login credentials (username/password) for a website.',
-      inputSchema: { type: 'object', properties: { site: { type: 'string', description: 'Website domain (e.g. github.com)' }, username: { type: 'string' }, password: { type: 'string' }, notes: { type: 'string', description: 'Optional notes' } }, required: ['site', 'username'] }, fn: llm_credential_save },
+      inputSchema: { type: 'object', properties: { site: { type: 'string', description: 'Website domain (e.g. github.com)' }, username: { type: 'string' }, password: { type: 'string' }, notes: { type: 'string', description: 'Optional notes' }, account_id: { type: 'string', description: 'Existing account ID when rotating its password' } }, required: ['site', 'username', 'password'] }, fn: llm_credential_save },
     { name: 'llm_credential_get', description: 'List imported account labels for a website; passwords remain encrypted.',
       inputSchema: { type: 'object', properties: { site: { type: 'string', description: 'Website domain' } }, required: ['site'] }, fn: llm_credential_get },
     { name: 'llm_credential_list', description: 'List all sites with saved credentials.',

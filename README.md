@@ -24,6 +24,8 @@ The MCP tools can list accounts, fill a selected account, save a newly created
 or rotated password, delete an account, and import additional CSV files. The
 agent gets website content via structured actions; screenshots remain an
 optional tool rather than the login path.
+When changing a password, pass the existing `account_id` to
+`llm_credential_save` so the imported Google record is updated in place.
 
 The adapter source is Apache-2.0 licensed. It depends on CloakBrowser's MIT
 wrapper. CloakHQ applies separate terms to its compiled Chromium binary;
