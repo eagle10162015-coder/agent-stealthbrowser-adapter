@@ -23,6 +23,10 @@ screenshot; its result cannot guarantee acceptance by a site.
    named profile. Headed mode is the default. Set `WRAITH_PYTHON` if Python is
    not on PATH.
 
+Each profile stores its own stable CloakBrowser fingerprint seed. The seed is
+created on first use and copied with the profile, keeping the browser identity
+consistent across restarts instead of changing on every launch.
+
 The MCP tools can list accounts, fill a selected account, save a newly created
 or rotated password, delete an account, and import additional CSV files. The
 agent gets website content via structured actions; screenshots remain an

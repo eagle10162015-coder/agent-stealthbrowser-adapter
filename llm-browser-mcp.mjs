@@ -10,6 +10,7 @@ import { homedir } from 'os';
 import { existsSync, appendFileSync } from 'fs';
 import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
+import { randomInt } from 'crypto';
 import { sanitize, Verdict } from './injection-guard.mjs';
 import { autoReport } from './auto-report.mjs';
 import { elevateScanResult } from './elevate-alert.mjs';
@@ -52,6 +53,27 @@ const VIEWPORT = { width: 1920, height: 1080 };
 
 async function _ensureProfilesDir() {
     await mkdir(PROFILES_DIR, { recursive: true });
+}
+
+async function _profileFingerprintSeed(profileDir) {
+    const seedPath = join(profileDir, '.fingerprint-seed');
+    try {
+        const stored = (await readFile(seedPath, 'utf8')).trim();
+        if (!/^[1-9][0-9]{4}$/.test(stored) || Number(stored) > 99999) {
+            throw new Error(`Invalid fingerprint seed in ${seedPath}`);
+        }
+        return stored;
+    } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+    }
+    const seed = String(randomInt(10000, 100000));
+    try {
+        await writeFile(seedPath, seed, { flag: 'wx' });
+        return seed;
+    } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
+        return _profileFingerprintSeed(profileDir);
+    }
 }
 
 function _launchOpts() {
@@ -207,11 +229,14 @@ async function _launchProfile(name) {
     await mkdir(profileDir, { recursive: true });
     await _clearStaleLock(profileDir);
     await _enableSessionRestore(profileDir);
+    const fingerprintSeed = await _profileFingerprintSeed(profileDir);
     // cloakbrowser's launchPersistentContext takes a single options object with
     // userDataDir, not Playwright's positional (dir, opts) signature. Passing the
     // directory positionally throws before _currentProfile is ever assigned, so
     // every session silently fell back to an ephemeral context.
-    _context = await launchPersistentContext({ userDataDir: profileDir, ..._launchOpts() });
+    const launchOpts = _launchOpts();
+    launchOpts.args.push(`--fingerprint=${fingerprintSeed}`);
+    _context = await launchPersistentContext({ userDataDir: profileDir, ...launchOpts });
     _currentProfile = name;
     const pages = _context.pages();
     const isFreshProfile = pages.length === 0;
