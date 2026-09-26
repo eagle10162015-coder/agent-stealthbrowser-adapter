@@ -41,3 +41,8 @@ this repository neither includes nor relicenses that binary. See
 
 Site acceptance and challenge results vary. The code should report a blocked
 or interrupted login rather than treating an attempted fill as success.
+
+For agents that need to work in an already signed-in personal Chrome profile,
+see the [persistent personal Chrome MCP gateway](examples/personal-chrome-gateway/README.md).
+It shares one Chrome permission session across MCP clients while keeping the
+gateway bound to the local machine.
